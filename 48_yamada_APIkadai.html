@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>ぐるなびAPI</title>
+</head>
+<body>
+
+<div>
+    アクセスキーを入力<input id="key" value="6031b149097a7eb6f01490be49db7ecc" type="text" size="45">
+    <input type="button" id="btn" value="送信"><br>
+    緯度lat: <input type="text" id="lat" value="35.681236">
+    経度lon: <input type="text" id="lon" value="139.767125">
+</div>
+
+<div id="myMap" style="width:500px;height:500px;"></div>
+
+<table id="table-hotel">
+    <tr style="border:solid">
+        <th>ホテル名</th>
+        <th>住所</th>
+        <th>概要説明</th>
+    </tr>
+</table>
+
+
+<table id="table-restaurant">
+    <tr style="border:solid">
+        <th>店舗名</th>
+        <th>店舗画像</th>
+        <th>営業時間</th>
+    </tr>
+</table>
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AnOTXYXwLujYGG_5cxUJxMckY59RExdztiBPAgLB2s_gIN7VOJvErkZxl95-4VhL" async defer></script>
+<script src="\BmapQuery-master\js\BmapQuery.js"></script>
+<script src="https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426?format=json&longitude=139.767125&latitude=35.681236&formatVersion=2&carrier=0&searchRadius=1&hits=5&page=1&datumType=1&applicationId=1043795171018791131"></script>
+<script>
+
+
+
+let map;
+let lat = $("#lat").val();
+let lon = $("#lon").val();
+
+function GetMap() {
+    //1. Init
+    const map = new Bmap("#myMap");
+    //2. map.startMap(lat, lon, "MapType", Zoom[1~20]);
+    map.startMap(lat,lon, "load", 10);
+}
+
+
+
+
+//*****************************************************
+// Click Event
+// ぐるなびAPIへデータRequest → APIサーバーからresponseデータ取得 
+//*****************************************************
+
+
+$("#btn").on("click", function() {
+    //送信データをObject変数で用意
+    //参考URL:https://api.gnavi.co.jp/api/manual/restsearch/
+    
+    let data = {
+        keyid:$("#key").val(),
+        latitude:$("#lat").val(),
+        longitude:$("#lon").val(),
+        range:5,
+        address:1,
+          ///parking:1
+    };
+    
+
+    let data2 = {
+        format:'json',
+        datumType:1,
+        latitude:$("#lat").val(),
+        longitude:$("#lon").val(),
+        searchRadius:1,
+        applicationId:'1043795171018791131',
+        formatVersion:2,
+        page:1,
+        hits:5,
+        carrier:0,
+
+
+    };
+
+
+    
+    //Ajax（非同期通信）
+    
+    axios.get('https://api.gnavi.co.jp/RestSearchAPI/v3/', {
+        params:data
+    }).then(function (response) {
+        //データ受信成功！！showData関数にデータを渡す
+        showData(response.data);
+        //return(GetMap);
+    }).catch(function (error) {
+        console.log(error);//通信Error
+    }).then(function () {
+        //console.log("Last");//通信OK/Error後に処理を必ずさせたい場合
+    });
+    
+
+    axios.get('https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426',{
+        params:data2
+    }).then(function showData(data2) {
+        //データ受信成功！！showData関数にデータを渡す
+        console.log(data2.data.hotels);
+    //データ確認用
+    //データを繰り返し処理で取得
+    const rakuten = []
+    const len2  = data2.data.hotels.length;
+
+    for( let i=0; i<len2; i++){
+        rakuten.push(data2.data.hotels[i]);
+        $("#table-hotel").append('<tr><td>'+rakuten[i].hotel+'</td></tr>');
+        ///$("#table").append('<img src="'+data.rest[i].image_url.shop_image1 +'">');
+    };
+
+});
+
+        //return(GetMap);
+        
+});
+
+
+//*****************************************************
+//ぐるなびデータ表示処理
+//*****************************************************
+
+function showData(data){
+    //データ確認用
+    console.log(data.rest);
+    $("#table-restaurant").find('tr tr').remove();
+    //データを繰り返し処理で取得
+    const len  = data.rest.length; //データ数を取得
+    for( let i=0; i<len; i++){
+        $("#table-restaurant").append('<tr><td>' + data.rest[i].name +'</td><td>'+'<img src="'+data.rest[i].image_url.shop_image1 +'">' + '</td><td>' + data.rest[i].opentime + '</td><td>'+data.rest[i].address + '</td><td>'+data.rest[i].tel+'</td></tr>');
+        ///$("#table").append('<img src="'+data.rest[i].image_url.shop_image1 +'">');
+    };
+}
+
+
+//*****************************************************
+//Trip Adviserデータ表示処理
+//*****************************************************
+
+
+
+
+
+</script>
+</body>
+</html>
